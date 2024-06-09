@@ -5,6 +5,11 @@
 .App-logo {
   height: 40vmin;
   pointer-events: none;
+  text-decoration: none;
+  font-size: 30px;
+  cursor: pointer;
+  color:white;
+  font-weight: bold;
 }
 
 @media (prefers-reduced-motion: no-preference) {

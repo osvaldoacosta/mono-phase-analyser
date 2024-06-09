@@ -1,5 +1,6 @@
 import React from "react";
 import { AppBar, Toolbar, Typography, Box, Button } from "@mui/material";
+import Icone_Logo from "./eletric.png";
 
 const MenuBar = () => {
   return (
@@ -7,7 +8,7 @@ const MenuBar = () => {
       <Toolbar>
         <Box display="flex" alignItems="center">
           <img
-            src="logo512.png"
+            src={ Icone_Logo }
             alt="MonoPhaseAnalyzer Logo"
             style={{ height: 40, marginRight: 16 }}
           />
