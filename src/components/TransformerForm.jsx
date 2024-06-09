@@ -105,9 +105,10 @@ const TransformerForm = () => {
 
   return (
     <Box sx={{ width: 600, mx: "auto", mt: 5 }}>
+      <h1>Cálculo dos Parâmetros do Transformador</h1>
       <form onSubmit={handleSubmit}>
         <FormControl component="fieldset" fullWidth margin="normal">
-          <FormLabel component="legend">Selecione tipo de ensaio: </FormLabel>
+          <FormLabel component="legend">Selecione o tipo de ensaio (CC ou CA): </FormLabel>
           <RadioGroup
             aria-label="tension"
             name="tensionType"
@@ -118,12 +119,12 @@ const TransformerForm = () => {
             <FormControlLabel
               value="Alta"
               control={<Radio />}
-              label="Ensaio de curto-Circuito(Lado de alta tensão)"
+              label="Ensaio de Curto-Circuito (Lado de alta tensão) - CC"
             />
             <FormControlLabel
               value="Baixa"
               control={<Radio />}
-              label="Ensaio de circuito-aberto(Lado de baixa tensão)"
+              label="Ensaio de Circuito Aberto (Lado de baixa tensão) - CA"
             />
           </RadioGroup>
         </FormControl>
@@ -238,7 +239,13 @@ const TransformerForm = () => {
             />
           </Grid>
         </Grid>
-        <Button type="submit" variant="contained" color="primary" fullWidth>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          fullWidth
+          style={{ backgroundColor: "#274e5e" }} 
+        >
           Continuar
         </Button>
       </form>
