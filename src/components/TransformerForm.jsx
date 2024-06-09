@@ -11,16 +11,26 @@ import {
   RadioGroup,
   Select,
   TextField,
+  Grid,
 } from "@mui/material";
+import CircuitResult from "./Result";
 
 const TransformerForm = () => {
   const [formValues, setFormValues] = useState({
     tensionType: "baixa",
     transformerType: "",
-    transformerPower: "",
-    transformerVoltage: "",
-    transformerCurrent: "",
+    Pca: "",
+    Vca: "",
+    Ica: "",
+    transformerImage: "",
+    espiraPrimario: "",
+    espiraSecundario: "",
+    Icc: "",
+    Vcc: "",
+    Pcc: "",
   });
+
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -32,15 +42,72 @@ const TransformerForm = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    // handle form submission
-    console.log("Form Submitted", formValues);
+
+    let transformerImage = "";
+    if (formValues.tensionType === "Alta") {
+      switch (formValues.transformerType) {
+        case "T":
+          transformerImage = "T-Primario.png";
+          break;
+        case "L":
+          transformerImage = "L-Primario.png";
+          break;
+        case "SERIE":
+          transformerImage = "SERIE-Primario.png";
+          break;
+        default:
+          transformerImage = "SERIE-Primario.png";
+          break;
+      }
+    } else {
+      switch (formValues.transformerType) {
+        case "T":
+          transformerImage = "T-Secundario.png";
+
+          break;
+        case "L":
+          transformerImage = "L-Secundario.png";
+          break;
+        case "SERIE":
+          transformerImage = "SERIE-Secundario.png";
+          break;
+        default:
+          transformerImage = "";
+          break;
+      }
+    }
+
+    setFormValues((prevValues) => ({
+      ...prevValues,
+      transformerImage,
+    }));
+
+    setIsSubmitted(true);
   };
 
+  if (isSubmitted) {
+    return (
+      <CircuitResult
+        tensionType={formValues.tensionType}
+        transformerType={formValues.transformerType}
+        Pca={formValues.Pca}
+        Ica={formValues.Ica}
+        Vca={formValues.Vca}
+        transformerImage={formValues.transformerImage}
+        espiraPrimario={formValues.espiraPrimario}
+        espiraSecundario={formValues.espiraSecundario}
+        Icc={formValues.Icc}
+        Vcc={formValues.Vcc}
+        Pcc={formValues.Pcc}
+      />
+    );
+  }
+
   return (
-    <Box sx={{ width: 300, mx: "auto", mt: 5 }}>
+    <Box sx={{ width: 600, mx: "auto", mt: 5 }}>
       <form onSubmit={handleSubmit}>
         <FormControl component="fieldset" fullWidth margin="normal">
-          <FormLabel component="legend">Selecione o Lado: </FormLabel>
+          <FormLabel component="legend">Selecione tipo de ensaio: </FormLabel>
           <RadioGroup
             aria-label="tension"
             name="tensionType"
@@ -49,14 +116,14 @@ const TransformerForm = () => {
             row
           >
             <FormControlLabel
-              value="baixa"
+              value="Alta"
               control={<Radio />}
-              label="Baixa Tensão"
+              label="Ensaio de curto-Circuito(Lado de alta tensão)"
             />
             <FormControlLabel
-              value="alta"
+              value="Baixa"
               control={<Radio />}
-              label="Alta Tensão"
+              label="Ensaio de circuito-aberto(Lado de baixa tensão)"
             />
           </RadioGroup>
         </FormControl>
@@ -76,33 +143,101 @@ const TransformerForm = () => {
             <MenuItem value="SERIE">Tipo Em Série</MenuItem>
           </Select>
         </FormControl>
-        <TextField
-          fullWidth
-          margin="normal"
-          id="transformerPower"
-          name="transformerPower"
-          label="Potência do Transformador"
-          value={formValues.transformerPower}
-          onChange={handleChange}
-        />
-        <TextField
-          fullWidth
-          margin="normal"
-          id="transformerVoltage"
-          name="transformerVoltage"
-          label="Tensão do Transformador"
-          value={formValues.transformerVoltage}
-          onChange={handleChange}
-        />
-        <TextField
-          fullWidth
-          margin="normal"
-          id="transformerCurrent"
-          name="transformerCurrent"
-          label="Corrente do Transformador"
-          value={formValues.transformerCurrent}
-          onChange={handleChange}
-        />
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              id="Vca"
+              name="Vca"
+              label="Tensão do Transformador"
+              value={formValues.Vca}
+              onChange={handleChange}
+            />
+          </Grid>
+
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              id="Vcc"
+              name="Vcc"
+              label="Tensão de Curto-Circuito (Vcc)"
+              value={formValues.Vcc}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              id="Ica"
+              name="Ica"
+              label="Corrente do Transformador"
+              value={formValues.Ica}
+              onChange={handleChange}
+            />
+          </Grid>
+
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              id="Icc"
+              name="Icc"
+              label="Corrente de Curto-Circuito (Icc)"
+              value={formValues.Icc}
+              onChange={handleChange}
+            />
+          </Grid>
+
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              id="Pca"
+              name="Pca"
+              label="Potência do Transformador"
+              value={formValues.Pca}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              margin="normal"
+              id="Pcc"
+              name="Pcc"
+              label="Potência de Curto-Circuito (Pcc)"
+              value={formValues.Pcc}
+              onChange={handleChange}
+            />
+          </Grid>
+        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              margin="normal"
+              name="espiraPrimario"
+              id="espiraPrimario"
+              label="Quantidade de espiras do lado primário"
+              value={formValues.espiraPrimario}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              margin="normal"
+              name="espiraSecundario"
+              id="espiraSecundario"
+              label="Quantidade de espiras do lado secundário"
+              value={formValues.espiraSecundario}
+              onChange={handleChange}
+            />
+          </Grid>
+        </Grid>
         <Button type="submit" variant="contained" color="primary" fullWidth>
           Continuar
         </Button>
