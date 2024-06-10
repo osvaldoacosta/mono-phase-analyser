@@ -1,6 +1,5 @@
 import React from "react";
 import { AppBar, Toolbar, Typography, Box, Button } from "@mui/material";
-import Icone_Logo from "./eletric.png";
 
 const MenuBar = () => {
   return (
@@ -8,7 +7,7 @@ const MenuBar = () => {
       <Toolbar sx={{ justifyContent: "space-between" }}>
         <Box display="flex" alignItems="center">
           <img
-            src={Icone_Logo}
+            src={"eletric.png"}
             alt="MonoPhaseAnalyzer Logo"
             style={{ height: 40, marginRight: 16 }}
           />
@@ -17,9 +16,15 @@ const MenuBar = () => {
           </Typography>
         </Box>
         <Box>
-          <Button color="inherit" href="/">Início</Button>
-          <Button color="inherit" href="/ensaios">Ensaios</Button>
-          <Button color="inherit" href="/diagramas">Diagrama Fasorial</Button>
+          <Button color="inherit" href="/">
+            Início
+          </Button>
+          <Button color="inherit" href="/ensaios">
+            Ensaios
+          </Button>
+          <Button color="inherit" href="/diagramas">
+            Diagrama Fasorial
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
@@ -27,4 +32,3 @@ const MenuBar = () => {
 };
 
 export default MenuBar;
-
