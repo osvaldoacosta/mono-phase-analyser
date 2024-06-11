@@ -1,7 +1,9 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import PhasorialDiagram from "./PhasorialDiagram";
-import { complex, i, evaluate, add, multiply, abs, arg } from "mathjs";
+import { complex, evaluate, add, abs, arg } from "mathjs";
+import VoltageRegulationChart from "./VoltageRegulationChart";
+
 const CircuitResult = ({
   tensionType,
   transformerType,
@@ -12,86 +14,138 @@ const CircuitResult = ({
   VTransAlta,
   VTransBaixa,
   Icc,
-  Pcc,
   Vcc,
+  Pcc,
   Pap,
+  Fp,
 }) => {
-  let Zca,
-    RcCa,
-    Xca,
-    ZphiCa,
-    RaMag,
-    XmCa,
-    Zcc,
+  let Zca, RcCa, Xca, RaMag, XmCa;
+  let Zcc,
     RcCc,
     Xcc,
-    Zphi,
     RcMag,
     Xm,
     Xeq,
     Req,
     Rcp,
     Xmp,
-    Vpsobrea;
+    Vpsobrea,
+    VfinalPolarTwo,
+    vectorObjArr;
+
+  const a = VTransAlta / VTransBaixa;
+  Zcc = calcularImpedanciaCc(Vcc, Icc);
+  RcCc = calcularResistenciaCc(Pcc, Icc, a);
+  Xcc = calcularReatanciaCc(Zcc, RcCc);
+
+  const Zphi = calcularImpedanciaMagnetizacao(Vca, Ica);
+  RcMag = calcularResistenciaMagnetizacao(Vca, Pca);
+  Xm = calcularReatanciaMagnetizacao(Zphi, RcMag);
+  const Thetacc = (Math.acos(Pcc / (Icc * Vcc)) * 180) / Math.PI;
+  const rectangularForm = polarToRectangular(Zcc, Thetacc);
+
+  Req = rectangularForm.real;
+  Xeq = rectangularForm.imaginary;
 
   if (tensionType === "Baixa") {
-    Zca = calcularImpedanciaCa(Vca, Ica);
-    RcCa = calcularResistenciaCa(Vca, Pca);
-    Xca = calcularReatanciaCa(Zca, RcCa);
-
-    ZphiCa = calcularImpedanciaMagnetizacaoCa(Vca, Ica);
-    RaMag = calcularResistenciaMagnetizacaoCa(Vca, Pca);
-    XmCa = calcularReatanciaMagnetizacaoCa(Vca, Ica, RcCa);
+    Rcp = RcMag;
+    Xmp = Xm;
   } else {
-    const a = VTransAlta / VTransBaixa;
-    Zcc = calcularImpedanciaCc(Vcc, Icc);
-    RcCc = calcularResistenciaCc(Pcc, Icc, a);
-    Xcc = calcularReatanciaCc(Zcc, RcCc);
-
-    Zphi = calcularImpedanciaMagnetizacao(Vca, Ica);
-    RcMag = calcularResistenciaMagnetizacao(Vca, Pca);
-    Xm = calcularReatanciaMagnetizacao(Zphi, RcMag);
-    const Thetacc = (Math.acos(Pcc / (Icc * Vcc)) * 180) / Math.PI;
-    const rectangularForm = polarToRectangular(Zcc, Thetacc);
-
-    Req = rectangularForm.real;
-    Xeq = rectangularForm.imaginary;
-
     Rcp = a * a * RcMag;
     Xmp = Xm * a * a;
-
-    const Is = Pap / Vca;
-
-    const Rs = Req / Math.pow(a, 2); // Resistancia
-    const Xs = Xeq / Math.pow(a, 2); //Reatancia
-
-    const Vrs = complex(Rs * Is, 0); // Voltage drop across resistance
-    const Vxs = complex(0, Xs * Is); // Voltage drop across reactance
-
-    // Initial voltage in complex form (polar to rectangular)
-    const VpRect = complex(Vca, 0);
-
-    // Sum the components
-    const VsumRect = add(VpRect, Vrs);
-    const VfinalRect = add(VsumRect, Vxs);
-
-    // Convert the final voltage back to polar form
-    const VfinalPolar = abs(VfinalRect);
-    const VfinalAngle = arg(VfinalRect) * (180 / Math.PI); // Convert radians to degrees
-
-    console.log(Xm);
-    Vpsobrea = `Vp/a = ${VfinalPolar} ∠ ${VfinalAngle.toFixed(2)}° V`;
   }
+  const Is = Pap / Vca;
+  console.log("Fp:", Fp, "\nIs", Is);
+
+  const Rs = Req / Math.pow(a, 2);
+  const Xs = Xeq / Math.pow(a, 2);
+
+  console.log("Fp:", Fp, "\nIs", Is, "\nRs:", Rs, "\nXs", Xs);
+
+  let currentAngle = 0;
+  if (Fp !== 1) {
+    const fpAngle = Math.acos(Math.abs(Fp)) * (180 / Math.PI);
+    currentAngle = Fp < 0 ? -fpAngle : fpAngle;
+  }
+
+  console.log("Fp:", Fp);
+  console.log("Current Angle (degrees):", currentAngle);
+
+  const Vrs = complex(
+    Rs * Is * Math.cos(currentAngle * (Math.PI / 180)),
+    Rs * Is * Math.sin(currentAngle * (Math.PI / 180)),
+  );
+
+  console.log(Vrs);
+
+  const Vxs = complex(
+    -Xs * Is * Math.sin(currentAngle * (Math.PI / 180)),
+    Xs * Is * Math.cos(currentAngle * (Math.PI / 180)),
+  );
+
+  var VpRect = complex(Vca, 0);
+  const VsumRect = add(VpRect, Vrs);
+  console.log(VsumRect);
+  const VfinalRect = add(VsumRect, Vxs);
+  console.log(VfinalRect);
+
+  const VfinalPolar = abs(VfinalRect);
+  const VfinalAngle = arg(VfinalRect) * (180 / Math.PI);
+
+  Vpsobrea = {
+    polar: VfinalPolar,
+    angle: VfinalAngle,
+    representacao: `${VfinalPolar.toFixed(2)} ∠ ${VfinalAngle.toFixed(2)}° V`,
+  };
+
+  console.log(Vpsobrea);
+  VfinalPolarTwo = abs(VfinalRect);
+
+  const jXeqIs = complex(Xs * Is, currentAngle + 90);
+  console.log(jXeqIs);
+
+  const vectorObj = {
+    Is: Is,
+    FpAngle: currentAngle,
+    Vrs: Vrs,
+    jXeqIs: jXeqIs,
+  };
 
   const vectors = [
     {
       angle: 0,
-      intensity: VTransBaixa,
-      name: "Vs",
+      intensity: VpRect.re,
+      name: `Vs =${VpRect.re.toFixed(2)} ∠ 0° V`,
     },
-    { angle: 90, intensity: Xca * Ica, name: "jXeqIs" },
-    { angle: 0, intensity: RcCa * Ica, name: "ReqIs" },
+    {
+      angle: vectorObj.FpAngle,
+      intensity: vectorObj.Vrs.re,
+      name: `ReqIs =${vectorObj.Vrs.re.toFixed(2)} ∠ ${vectorObj.Vrs.im.toFixed(
+        2,
+      )}° V`,
+    },
+    {
+      angle: vectorObj.jXeqIs.im,
+      intensity: vectorObj.jXeqIs.re,
+      name: `jXeqIs =${vectorObj.jXeqIs.re.toFixed(
+        2,
+      )} ∠ ${vectorObj.jXeqIs.im.toFixed(2)}° V`,
+    },
   ];
+
+  const independentVectors = [
+    {
+      angle: vectorObj.FpAngle,
+      intensity: vectorObj.Is,
+      name: `Is =${vectorObj.Is.toFixed(2)} ∠ ${vectorObj.FpAngle.toFixed(
+        2,
+      )}° A`,
+    },
+  ];
+
+  vectorObjArr = { sumvec: vectors, singlevec: independentVectors };
+
+  const regTensao = (((VfinalPolarTwo - Vca) / Vca) * 100).toFixed(2);
 
   return (
     <div>
@@ -99,12 +153,12 @@ const CircuitResult = ({
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
           mt: 5,
         }}
       >
-        <Box sx={{ flex: "0 0 auto" }}>
+        <Box sx={{ mb: 5 }}>
           <img
             src={transformerImage}
             alt="Diagrama do Circuito"
@@ -118,98 +172,149 @@ const CircuitResult = ({
         </Box>
         <Box sx={{ textAlign: "center" }}>
           <Typography variant="h6">Resultados:</Typography>
-          {tensionType === "Baixa" && (
+          <Typography sx={{ color: "black" }}>Tensão: {tensionType}</Typography>
+          <Typography sx={{ mt: 1, color: "black" }}>
+            Tipo: {transformerType}
+          </Typography>
+          <Typography sx={{ mt: 1, color: "black" }}>
+            Tensão maior: {VTransAlta}
+          </Typography>
+          <Typography sx={{ mt: 1, color: "black" }}>
+            Tensão menor: {VTransBaixa}
+          </Typography>
+          {tensionType === "Baixa" ? (
             <div>
-              <Typography sx={{ color: "black" }}>
-                Tensão: {tensionType}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Tipo: {transformerType}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Potência: {Pca}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Tensão: {Vca}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Corrente: {Ica}
-              </Typography>
-              <ul>
-                <li>Zca: {Zca}</li>
-                <li>RcCa: {RcCa}</li>
-                <li>Xca: {Xca}</li>
-                <li>ZphiCa: {ZphiCa}</li>
-                <li>RaMag: {RaMag}</li>
-                <li>XmCa: {XmCa}</li>
-              </ul>
-              <div>
-                <h1>Diagrama fasorial</h1>
-                <PhasorialDiagram vectors={vectors} />
-              </div>
+              {transformerType === "L" && (
+                <ul>
+                  <li>Rc/a² = {Rcp.toFixed(2)} Ohm</li>
+                  <li>jXm/a² = j{Xm.toFixed(2)} Ohm</li>
+                  <li>Reqs = {Rs.toFixed(2)} Ohm</li>
+                  <li>jXeqs = j{Xs.toFixed(2)} Ohm</li>
+                  <li>Vp/a = {Vpsobrea.representacao}</li>
+                  <li>{`Vs = ${VpRect.re.toFixed(2)} ∠ 0° V`}</li>
+                  <li>Is = {Is.toFixed(2)} A</li>
+                  <li>Regulação de tensão: {regTensao}%</li>
+                </ul>
+              )}
+              {transformerType === "SERIE" && (
+                <ul>
+                  <li>Reqs = {Req.toFixed(2)} Ohm</li>
+                  <li>jXeqs = j{Xeq.toFixed(2)} Ohm</li>
+                  <li>Vp/a = {Vpsobrea.representacao}</li>
+                  <li>{`Vs = ${VpRect.re.toFixed(2)} ∠ 0° V`}</li>
+                  <li>Regulação de tensão: {regTensao}%</li>
+                </ul>
+              )}
+              {transformerType === "T" && (
+                <ul>
+                  <li>Rp/a²= {(Req / (2 * a * a)).toFixed(2)} Ohm</li>
+                  <li>jXp/a²= j{(Xeq / (2 * a * a)).toFixed(2)} Ohm</li>
+                  <li>Rs= {(Req / 2).toFixed(2)} Ohm</li>
+                  <li>jXs= j{(Xeq / 2).toFixed(2)} Ohm</li>
+
+                  <li>Rc/a² = {Rcp.toFixed(2)} Ohm</li>
+                  <li>jXm/a² = j{Xm.toFixed(2)} Ohm</li>
+                  <li>Vp/a = {Vpsobrea.representacao}</li>
+                  <li>{`Vs = ${VpRect.re.toFixed(2)} ∠ 0° V`}</li>
+                  <li>Regulação de tensão: {regTensao}%</li>
+                </ul>
+              )}
+            </div>
+          ) : (
+            <div>
+              {transformerType === "L" && (
+                <ul>
+                  <li>Req = {Req.toFixed(2)} Ohm</li>
+                  <li>Xeq = {Xeq.toFixed(2)} Ohm</li>
+                  <li>Rc = {Rcp.toFixed(2)} Ohm</li>
+                  <li>jXm = j{Xmp.toFixed(2)} Ohm</li>
+                  <li>
+                    Vp ={" "}
+                    {`${VfinalPolar.toFixed(2) * a} ∠ ${VfinalAngle.toFixed(
+                      2,
+                    )}° V`}
+                  </li>
+                  <li>{`aVs = ${VpRect.re.toFixed(2) * a} ∠ 0° V`}</li>
+                  <li>Regulação de tensão: {regTensao}%</li>
+                </ul>
+              )}
+              {transformerType === "SERIE" && (
+                <ul>
+                  <li>Reqp = {Req.toFixed(2)} Ohm</li>
+                  <li>jXeqp = j{Xeq.toFixed(2)} Ohm</li>
+                  <li>
+                    Vp ={" "}
+                    {`${VfinalPolar.toFixed(2) * a} ∠ ${VfinalAngle.toFixed(
+                      2,
+                    )}° V`}
+                  </li>
+                  <li>{`aVs = ${VpRect.re.toFixed(2) * a} ∠ 0° V`}</li>
+                  <li>Regulação de tensão: {regTensao}%</li>
+                </ul>
+              )}
+
+              {transformerType === "T" && (
+                <ul>
+                  <li>Rp= {(Req / 2).toFixed(2)} Ohm</li>
+                  <li>jXp= j{(Xeq / 2).toFixed(2)} Ohm</li>
+                  <li>a²Rs= {((Req / 2) * a * a).toFixed(2)} Ohm</li>
+                  <li>ja²Xs= j{(Xeq / 2).toFixed(2) * a * a} Ohm</li>
+
+                  <li>Rc = {Rcp.toFixed(2)} Ohm</li>
+                  <li>jXm = j{Xmp.toFixed(2)} Ohm</li>
+                  <li>
+                    Vp ={" "}
+                    {`${VfinalPolar.toFixed(2) * a} ∠ ${VfinalAngle.toFixed(
+                      2,
+                    )}° V`}
+                  </li>
+                  <li>{`aVs = ${VpRect.re.toFixed(2) * a} ∠ 0° V`}</li>
+                  <li>Regulação de tensão: {regTensao}%</li>
+                </ul>
+              )}
             </div>
           )}
-          {tensionType !== "Baixa" && (
-            <div>
-              <Typography sx={{ color: "black" }}>
-                Tensão: {tensionType}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Tipo: {transformerType}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Potência: {Pca}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Tensão: {Vca}
-              </Typography>
-              <Typography sx={{ mt: 1, color: "black" }}>
-                Corrente: {Ica}
-              </Typography>
-              <ul>
-                <li>Zcc: {Zcc}</li>
-                <li>RcCc: {RcCc}</li>
-                <li>Xcc: {Xcc}</li>
-                <li>Zphi: {Zphi}</li>
-                <li>RcMag: {RcMag}</li>
-                <li>Xm: {Xm}</li>
-                <li>Req: {Req}</li>
-                <li>Xeq: {Xeq}</li>
-                <li>Rcp: {Rcp}</li>
-                <li>Xmp: {Xmp}</li>
-                <li>Vp/a: {Vpsobrea}</li>
-              </ul>
-            </div>
-          )}
+        </Box>
+        <Box sx={{ textAlign: "center", mb: 5 }}>
+          <h1>Grafico Regulação de tensão</h1>
+          <VoltageRegulationChart
+            maxLoad={Is.toFixed(2)}
+            fp={Fp}
+            Vca={Vca}
+            Req={Req}
+            Xeq={Xeq}
+            a={a}
+            Pap={Pap}
+          />
+        </Box>
+
+        <Box sx={{ textAlign: "center", mb: 5 }}>
+          <h1>Diagrama fasorial</h1>
+          <PhasorialDiagram
+            vectors={vectorObjArr.sumvec}
+            independentVectors={vectorObjArr.singlevec}
+            expressaoVpSobreA={Vpsobrea.representacao}
+          />
         </Box>
       </Box>
     </div>
   );
 };
-
 function polarToRectangular(magnitude, angleDegrees) {
-  const angleRadians = angleDegrees * (Math.PI / 180); // Convertendo o ângulo para radianos
+  const angleRadians = angleDegrees * (Math.PI / 180);
   const realPart = magnitude * Math.cos(angleRadians);
   const imaginaryPart = magnitude * Math.sin(angleRadians);
-  return {
-    real: realPart,
-    imaginary: imaginaryPart,
-  };
+  return { real: realPart, imaginary: imaginaryPart };
 }
 
-// Função para calcular a impedância no ensaio cc
 function calcularImpedanciaCc(Vcc, Icc) {
   return Vcc / Icc;
 }
 
-// Função para calcular a impedância no ensaio ca
 function calcularImpedanciaCa(Vca, Ica) {
-  //Zca = Rp + jXp + Zphi ou que za é aproxidamente zphi
-  const Zphi = Vca / Ica;
-  return Zphi;
+  return Vca / Ica;
 }
 
-// Função para calcular a resistência associada ao circuito de curto-circuito (Rc)
 function calcularResistenciaCc(Pcc, Icc, a) {
   const rc = Pcc / (Icc * Icc);
   return rc / (a * a);
@@ -220,53 +325,39 @@ function calcularResistenciaCa(Vca, Pca) {
   return rca;
 }
 
-// Função para calcular a reatância do circuito de curto-circuito (Xca)
 function calcularReatanciaCc(Zca, Rca) {
   return Math.sqrt(Zca * Zca - Rca * Rca);
 }
 
-//revisar fórmula
 function calcularReatanciaCa() {
-  //xca = ? ou xm = 2pifl
-  const Xca = 0;
-  return Xca;
+  return 0;
 }
 
-// Função para calcular a impedância do ramo de magnetização (Zphi)
 function calcularImpedanciaMagnetizacao(Vv, Iv) {
   return Vv / Iv;
 }
 
 function calcularImpedanciaMagnetizacaoCa(Vca, Ica) {
-  const zPhi = Vca / Ica;
-  return zPhi;
+  return Vca / Ica;
 }
 
-// Função para calcular a resistência do ramo de magnetização (Rc)
 function calcularResistenciaMagnetizacao(Vv, Pv) {
   return (Vv * Vv) / Pv;
 }
 
-//revisar fórmula
 function calcularResistenciaMagnetizacaoCa(Vca, Pca) {
-  const rc = (Vca * Vca) / Pca;
-  return rc;
+  return (Vca * Vca) / Pca;
 }
 
-// Função para calcular a reatância de magnetização (Xm)
 function calcularReatanciaMagnetizacao(Zphi, Rc) {
   const d1 = 1 / Math.abs(Zphi);
   const d2 = 1 / Rc;
-
   const zr = d1 * d1 - d2 * d2;
-  const Xm = 1 / Math.sqrt(zr);
-  return Xm;
+  return 1 / Math.sqrt(zr);
 }
 
 function calcularReatanciaMagnetizacaoCa(Vca, Ica, RcCa) {
-  const reatanciaMagCa =
-    Vca / Math.sqrt(Ica * Ica - (Vca / RcCa) * (Vca / RcCa));
-  return reatanciaMagCa;
+  return Vca / Math.sqrt(Ica * Ica - (Vca / RcCa) * (Vca / RcCa));
 }
 
 export default CircuitResult;
