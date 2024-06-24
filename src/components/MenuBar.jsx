@@ -19,11 +19,11 @@ const MenuBar = () => {
           <Button color="inherit" href="/">
             Início
           </Button>
-          <Button color="inherit" href="/ensaios">
-            Ensaios
+          <Button color="inherit" href="/parametros">
+            Parâmetros
           </Button>
-          <Button color="inherit" href="/diagramas">
-            Diagrama Fasorial
+          <Button color="inherit" href="/calculate-regulacao">
+            Calcular Regulação
           </Button>
         </Box>
       </Toolbar>

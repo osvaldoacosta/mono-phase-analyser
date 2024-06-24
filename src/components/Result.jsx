@@ -1,4 +1,4 @@
-import React from "react";
+/*import React from "react";
 import { Box, Typography } from "@mui/material";
 import PhasorialDiagram from "./PhasorialDiagram";
 import { complex, evaluate, add, abs, arg } from "mathjs";
@@ -361,3 +361,4 @@ function calcularReatanciaMagnetizacaoCa(Vca, Ica, RcCa) {
 }
 
 export default CircuitResult;
+*/
